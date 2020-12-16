@@ -10,7 +10,7 @@ namespace BlockChainBlockcypher
     public class NethereumManager
     {
 
-        public AccountInfo CreateAccountWithRandomPassowrd()
+        public AccountInfo CreateAccountWithRandomPassword()
         {
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
             var privateKey = ecKey.GetPrivateKeyAsBytes().ToHex();
