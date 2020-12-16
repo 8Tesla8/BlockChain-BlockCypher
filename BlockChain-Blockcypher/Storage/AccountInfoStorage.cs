@@ -15,6 +15,7 @@ namespace BlockChainBlockcypher.Storage
 
         private string _path;
 
+
         public AccountInfoStorage(string path)
         {
             SetPathToJson(path);
