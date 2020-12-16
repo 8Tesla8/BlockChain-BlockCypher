@@ -234,7 +234,7 @@ EXPLANATION: set path to json file where we are gonna store accounts information
             if (parameters.Count == 2 && !string.IsNullOrWhiteSpace(parameters[1])) 
                 account = _nethereumManager.CreateAccount(parameters[1]);
             else
-                account = _nethereumManager.CreateAccountWithRandomPassowrd();
+                account = _nethereumManager.CreateAccountWithRandomPassword();
 
 
             _accountStorage.AddAccount(account);

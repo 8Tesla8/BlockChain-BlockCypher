@@ -20,6 +20,7 @@ namespace BlockChainBlockcypher.Storage
             SetPathToJson(path);
         }
 
+
         public void SetPathToJson(string path)
         {
             if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
@@ -33,17 +34,6 @@ namespace BlockChainBlockcypher.Storage
                 if(listFromFile != null && listFromFile.Count > 0)
                     _accountInfoList = listFromFile;
             }
-        }
-
-
-        public void AddAccount(AccountInfo account)
-        {
-            _accountInfoList.Add(account);
-        }
-
-        public void AddRemove(AccountInfo account)
-        {
-            _accountInfoList.Remove(account);
         }
 
         public void SaveList(string path = null)
@@ -73,6 +63,16 @@ namespace BlockChainBlockcypher.Storage
                 return null;
             
             return _accountInfoList[index];
+        }
+
+        public void AddAccount(AccountInfo account)
+        {
+            _accountInfoList.Add(account);
+        }
+
+        public void RemoveAccount(AccountInfo account)
+        {
+            _accountInfoList.Remove(account);
         }
 
     }
