@@ -123,6 +123,25 @@ EXPLANATION: set path to json file where we are gonna store accounts information
             MessageHandler.SendMessage($"Account balance: {accountBalance.Balance}, unconfirmed balance: {accountBalance.UnconfirmedBalance}");
         }
 
+        private void BalanceCommandWithoutMessages(List<string> parameters)
+        {
+            if (parameters.Count != 2)
+                return;
+
+            var accountIndex = _parameterParser.ParseIndex(parameters[1]);
+
+            if (accountIndex == null)
+                return;
+
+
+            AccountInfo account = _accountStorage.GetAccountInfo(accountIndex.Value);
+            if (account == null)
+                return;
+
+            var accountBalance = _blockcypherClient.GetBalanceAsync(account.Address).GetAwaiter().GetResult();
+        }
+
+
         private void SendCommand(List<string> parameters)
         {
             if (parameters.Count != 4)
@@ -160,9 +179,7 @@ EXPLANATION: set path to json file where we are gonna store accounts information
 
 
             if (!string.IsNullOrWhiteSpace(transactionRezult.Error))
-            {
                 MessageHandler.SendMessage($"Error = {transactionRezult.Error}");
-            }
             else if(transactionRezult.TransactionInfo != null)
             {
                 MessageHandler.SendMessage($"Transaction hash = {transactionRezult.TransactionInfo.Hash}");
@@ -180,6 +197,45 @@ EXPLANATION: set path to json file where we are gonna store accounts information
                 _accountStorage.SaveList();
             }
         }
+
+        private void SendCommandWithoutMessages(List<string> parameters)
+        {
+            if (parameters.Count != 4)
+                return;
+
+            var fromAccountIndex = _parameterParser.ParseIndex(parameters[1]);
+            var toAccountIndex = _parameterParser.ParseIndex(parameters[2]);
+            var amount = _parameterParser.ParseAmount(parameters[3]);
+
+            if (fromAccountIndex == null || toAccountIndex == null || amount == null)
+                return;
+
+            AccountInfo fromAccount = _accountStorage.GetAccountInfo(fromAccountIndex.Value);
+            AccountInfo toAccount = _accountStorage.GetAccountInfo(toAccountIndex.Value);
+
+            if (fromAccount == null || toAccount == null)
+                return;
+
+
+            var hex = _nethereumManager.SignTransaction(fromAccount, toAccount, new BigInteger(amount.Value), fromAccount.TransactionCount);
+
+            var verificationResult = _nethereumManager.VerifyTransaction(hex);
+
+            var transactionRezult = _blockcypherClient.SendRawTransactionAsync(hex).GetAwaiter().GetResult();
+
+
+            if (transactionRezult.TransactionInfo != null)
+            {
+                var balanceFromAccount = _blockcypherClient.GetBalanceAsync(toAccount.Address).GetAwaiter().GetResult();
+
+                var balanceToAccount = _blockcypherClient.GetBalanceAsync(fromAccount.Address).GetAwaiter().GetResult();
+
+                //save list to json file, because we changed transaction count
+                fromAccount.TransactionCount++;
+                _accountStorage.SaveList();
+            }
+        }
+        
 
         private void FaucetCommand(List<string> parameters)
         {
@@ -221,6 +277,35 @@ EXPLANATION: set path to json file where we are gonna store accounts information
             }
         }
 
+        private void FaucetCommandWithoutMessages(List<string> parameters)
+        {
+            if (parameters.Count != 3)
+                return;
+
+
+            var accountIndex = _parameterParser.ParseIndex(parameters[1]);
+            var amount = _parameterParser.ParseAmount(parameters[2]);
+
+            if (accountIndex == null || amount == null)
+                return;
+
+            AccountInfo account = _accountStorage.GetAccountInfo(accountIndex.Value);
+
+
+            if (account == null)
+                return;
+
+            var result = _blockcypherClient.FaucetsAsync(account.Address, amount.Value).GetAwaiter().GetResult();
+
+
+            if (!string.IsNullOrWhiteSpace(result.TxRef))
+            {
+                var balanceAccount = _blockcypherClient.GetBalanceAsync(account.Address).GetAwaiter().GetResult();
+            }
+        }
+
+
+
         private void CreateCommand(List<string> parameters)
         {
             if (parameters.Count != 1 || parameters.Count != 2)
@@ -241,6 +326,31 @@ EXPLANATION: set path to json file where we are gonna store accounts information
             _accountStorage.SaveList();
 
             MessageHandler.SendMessage($"Account information, adress = {account.Address}, private key = {account.PrivateKey}");
+        }
+
+        private void CreateCommandWithoutMessages(List<string> parameters)
+        {
+            if (parameters.Count != 1 || parameters.Count != 2)
+                return;
+
+
+            AccountInfo account;
+            if (parameters.Count == 2 && !string.IsNullOrWhiteSpace(parameters[1]))
+                account = _nethereumManager.CreateAccount(parameters[1]);
+            else
+                account = _nethereumManager.CreateAccountWithRandomPassword();
+
+
+            _accountStorage.AddAccount(account);
+            _accountStorage.SaveList();
+        }
+
+        private void InitCommandWithoutMessages(List<string> parameters)
+        {
+            if (parameters.Count != 2)
+                return;
+
+            _accountStorage.SetPathToJson(parameters[1]);
         }
 
     }
